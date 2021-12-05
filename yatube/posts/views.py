@@ -1,15 +1,10 @@
 from django.contrib.auth import get_user_model
-
 from django.contrib.auth.decorators import login_required
-
 from django.core.paginator import Paginator
-
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import PostForm
-
 from .models import Group, Post
-
 
 User = get_user_model()
 
@@ -47,11 +42,10 @@ def profile(request, username):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    post_count = post_list.count()
     context = {
         'page_obj': page_obj,
         'author': author,
-        'post_count': post_count,
+        'post_list': post_list
     }
     return render(request, 'posts/profile.html', context)
 
@@ -71,19 +65,17 @@ def post_detail(request, post_id):
 @login_required
 def post_create(request):
     template = 'posts/create_post.html'
-    if request.method == 'POST':
-        form = PostForm(request.POST)
-        if form.is_valid():
-            text = form.cleaned_data['text'],
-            group = form.cleaned_data['group'],
-            form.text = text
-            form.group = group
-            form.instance.author = request.user
-            form.save()
-            return redirect('posts:profile', request.user)
+    form = PostForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        text = form.cleaned_data['text'],
+        group = form.cleaned_data['group'],
+        form.text = text
+        form.group = group
+        form.instance.author = request.user
+        form.save()
+        return redirect('posts:profile', request.user)
+    else:
         return render(request, template, {'form': form})
-    form = PostForm()
-    return render(request, template, {'form': form})
 
 
 @login_required
